@@ -1,0 +1,105 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+// 定義棋子類型
+enum Piece { EMPTY = 0, RED = 1, BLACK = 2 };
+
+class Checkers {
+private:
+    Piece board[8][8];
+    int turn; // 1: 紅方, 2: 黑方
+
+public:
+    Checkers() {
+        turn = 1; // 紅方先手
+        resetBoard();
+    }
+
+    void resetBoard() {
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                board[r][c] = EMPTY;
+                // 只在深色格放置棋子
+                if ((r + c) % 2 != 0) {
+                    if (r < 3) board[r][c] = BLACK;
+                    else if (r > 4) board[r][c] = RED;
+                }
+            }
+        }
+    }
+
+    void display() {
+        cout << "\n    0 1 2 3 4 5 6 7 (行)" << endl;
+        cout << "  -------------------" << endl;
+        for (int r = 0; r < 8; r++) {
+            cout << r << " | ";
+            for (int c = 0; c < 8; c++) {
+                if (board[r][c] == EMPTY) cout << ". ";
+                else if (board[r][c] == RED) cout << "R ";
+                else if (board[r][c] == BLACK) cout << "B ";
+            }
+            cout << "|" << endl;
+        }
+        cout << "  -------------------" << endl;
+        cout << "當前回合: " << (turn == 1 ? "紅方 (R)" : "黑方 (B)") << endl;
+    }
+
+    bool makeMove(int r1, int c1, int r2, int c2) {
+        // 1. 基本檢查：座標是否在範圍內
+        if (r1 < 0 || r1 > 7 || c1 < 0 || c1 > 7 || r2 < 0 || r2 > 7 || c2 < 0 || c2 > 7) return false;
+        // 2. 檢查是否選中自己的棋子
+        if (board[r1][c1] != turn) return false;
+        // 3. 檢查目標點是否為空地
+        if (board[r2][c2] != EMPTY) return false;
+
+        int rowDiff = r2 - r1;
+        int colDiff = abs(c2 - c1);
+
+        // 普通移動 (移動 1 格)
+        bool isNormalMove = (turn == 1 ? rowDiff == -1 : rowDiff == 1) && colDiff == 1;
+        
+        // 吃子移動 (移動 2 格)
+        bool isJumpMove = (turn == 1 ? rowDiff == -2 : rowDiff == 2) && colDiff == 2;
+
+        if (isNormalMove) {
+            executeMove(r1, c1, r2, c2);
+            return true;
+        } 
+        else if (isJumpMove) {
+            int midR = (r1 + r2) / 2;
+            int midC = (c1 + c2) / 2;
+            if (board[midR][midC] != EMPTY && board[midR][midC] != turn) {
+                board[midR][midC] = EMPTY; // 移除被吃掉的棋子
+                executeMove(r1, c1, r2, c2);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void executeMove(int r1, int c1, int r2, int c2) {
+        board[r2][c2] = board[r1][c1];
+        board[r1][c1] = EMPTY;
+        turn = (turn == 1) ? 2 : 1; // 換手
+    }
+};
+
+int main() {
+    Checkers game;
+    int r1, c1, r2, c2;
+
+    cout << "歡迎來到 C++ 國際跳棋！" << endl;
+    while (true) {
+        game.display();
+        cout << "輸入起始座標與目標 (r1 c1 r2 c2)，例如 '5 0 4 1': ";
+        if (!(cin >> r1 >> c1 >> r2 >> c2)) break;
+
+        if (!game.makeMove(r1, c1, r2, c2)) {
+            cout << ">>> 無效的移動，請再試一次！" << endl;
+        }
+    }
+    return 0;
+}
